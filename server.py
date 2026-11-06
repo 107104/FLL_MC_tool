@@ -52,12 +52,24 @@ def require(request,write=False,admin=False):
  return u
 
 def check_origin(request):
- origin=request.headers.get('origin')
- if origin:
-  from urllib.parse import urlparse
-  a=urlparse(origin); b=urlparse(str(request.base_url))
-  if (a.scheme,a.netloc)!=(b.scheme,b.netloc):raise HTTPException(403,'Invalid origin')
+    from urllib.parse import urlparse
 
+    origin = request.headers.get("origin")
+    if not origin:
+        return
+
+    allowed_origins = {
+        "https://fll-mc-tool.fly.dev"
+    }
+
+    parsed = urlparse(origin)
+    normalized_origin = f"{parsed.scheme}://{parsed.netloc}"
+
+    if normalized_origin not in allowed_origins:
+        raise HTTPException(
+            status_code=403,
+            detail="Invalid origin"
+        )
 class Credentials(BaseModel):
  email:str=Field(max_length=254)
  password:str=Field(min_length=12,max_length=256)
