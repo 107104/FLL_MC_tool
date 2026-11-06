@@ -1,0 +1,13 @@
+services:
+  ga:
+    build: .
+    restart: unless-stopped
+    environment:
+      GA_DB_PATH: /app/data/ga.sqlite3
+      GA_SECURE_COOKIES: "1"
+    volumes:
+      - ga_data:/app/data
+    ports:
+      - "127.0.0.1:8000:8000"
+volumes:
+  ga_data:
