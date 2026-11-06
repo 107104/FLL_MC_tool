@@ -1,0 +1,25 @@
+# fly.toml app configuration file generated for fll-mc-tool on 2026-11-06T22:06:34Z
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'fll-mc-tool'
+primary_region = 'sjc'
+
+[build]
+[env]
+  GA_DB_PATH = '/app/data/ga.sqlite3'
+  PORT = '8080'
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = 'stop'
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ['app']
+
+[[vm]]
+  cpu_kind = 'shared'
+  cpus = 1
+  memory_mb = 256
