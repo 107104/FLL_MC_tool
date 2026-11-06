@@ -1,9 +1,22 @@
+
 FROM python:3.12-slim
+
 WORKDIR /app
+
+# Install Python dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
-COPY server.py .
-COPY static ./static
+
+# Copy application files and folders
+COPY . .
+
+# Create database storage directory
 RUN mkdir -p /app/data
-EXPOSE 8000
-CMD ["uvicorn","server:app","--host","0.0.0.0","--port","8000","--proxy-headers"]
+
+# Configure application port
+ENV PORT=8080
+
+EXPOSE 8080
+
+# Start the FastAPI application
+CMD ["uvicorn", "server:app", "--host", "0.0.0.0", "--port", "8080", "--proxy-headers"]
