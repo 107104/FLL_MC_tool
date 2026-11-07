@@ -65,7 +65,7 @@ function tableColorClass(table){const n=Number(String(table).trim());return Numb
 function team(n){return db.teams.find(t=>String(t.number)===String(n))||{number:String(n||"—"),name:"Unknown team",city:"",pronunciation:"",bio:""}}
 function activeIndex(){const gs=matchGroups();const n=db.cursor[selectedEvent()]??0;return Math.max(0,Math.min(n,Math.max(0,gs.length-1)))}
 function initEvents(){const sel=document.getElementById("eventSelect");const old=sel.value;sel.innerHTML=db.events.map(e=>`<option value="${esc(e.id)}">${esc(e.name)}</option>`).join("");if(db.events.some(e=>e.id===old))sel.value=old;else if(db.events.length)sel.value=db.events[0].id}
-function showTab(tab){document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("active",b.dataset.tab===tab));["console","scripts","teams","events","missions","data","jokes"].forEach(id=>document.getElementById(id).classList.toggle("hidden",id!==tab));if(tab==="teams")renderTeams();if(tab==="events")renderMatches();if(tab==="jokes")loadJokes()}
+function showTab(tab){document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("active",b.dataset.tab===tab));["console","scripts","teams","events","missions","data","awards","jokes"].forEach(id=>document.getElementById(id).classList.toggle("hidden",id!==tab));if(tab==="teams")renderTeams();if(tab==="events")renderMatches();if(tab==="jokes")loadJokes();if(tab==="awards"&&typeof refreshAwards==="function")refreshAwards()}
 function renderConsole(){
  const groups=matchGroups(),idx=activeIndex(),cur=groups[idx],next=groups[idx+1],e=db.events.find(x=>x.id===selectedEvent());
  const tableLabel=g=>g.matches.map(m=>m.table).join(', ');
