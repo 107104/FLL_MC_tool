@@ -26,3 +26,7 @@ primary_region = 'sjc'
 [mounts]
   source = "ga_data"
   destination = "/app/data"
+
+[mounts]
+  source = "ga_data"
+  destination = "/app/data"
