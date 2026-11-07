@@ -23,3 +23,6 @@ primary_region = 'sjc'
   cpu_kind = 'shared'
   cpus = 1
   memory_mb = 256
+[mounts]
+  source = "ga_data"
+  destination = "/app/data"
