@@ -205,7 +205,59 @@ async function readExcelOffline(file){
   if(/^\d+(\.\d+)?$/.test(v)){const fraction=Number(v)%1;const total=Math.round(fraction*86400);return `${String(Math.floor(total/3600)%24).padStart(2,'0')}:${String(Math.floor(total%3600/60)).padStart(2,'0')}`;}
   return v;
  }
- function gaParseEmcee(rows,runType){const matches=[];
+ 
+function gaParseEmcee(rows, runType) {
+  const matches = [];
+
+  function cleanTeam(value) {
+    const s = String(value ?? "").trim().replace(/\.0+$/, "");
+    return /^\d+$/.test(s) ? s : "";
+  }
+
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i] || [];
+    const raw = String(row[0] ?? "").trim();
+
+    if (!/^\d+(?:\.0+)?$/.test(raw)) continue;
+
+    const round = Number(raw);
+    const time = gaTime((rows[i + 1] || [])[0]);
+
+    // The event uses three tables:
+    // Table 1 = columns B/C
+    // Table 2 = columns D/E
+    // Table 3 = columns F/G
+    const tablePositions = [
+      { table: "1", a: 1, b: 2 },
+      { table: "2", a: 3, b: 4 },
+      { table: "3", a: 5, b: 6 }
+    ];
+
+    for (const t of tablePositions) {
+      const team1 = cleanTeam(row[t.a]);
+      const team2 = cleanTeam(row[t.b]);
+
+      // Skip only completely empty tables.
+      if (!team1 && !team2) continue;
+
+      // Prevent duplicate teams in the same table.
+      if (team1 && team2 && team1 === team2) continue;
+
+      matches.push({
+        number: matches.length + 1,
+        sourceRound: round,
+        table: t.table,
+        runType,
+        startTime: time,
+        team1,
+        team2
+      });
+    }
+  }
+
+  return matches;
+}
+{const matches=[];
   for(let i=0;i<rows.length;i++){
    const row=rows[i]||[],raw=String(row[0]??'').trim();
    if(!/^\d+(?:\.0+)?$/.test(raw))continue;
