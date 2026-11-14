@@ -80,9 +80,22 @@ function renderConsole(){
  document.getElementById('heroMeta').textContent=cur?`${cur.time||'Time not set'} · ${cur.matches.length} table(s) · ${playing.length} teams`:(e?.name||'Select an event');
  document.getElementById('currentTeams').innerHTML=cur?cur.matches.map(m=>`<div class="table-group ${tableColorClass(m.table)}"><h4 class="table-heading">Table ${esc(m.table)} · Match ${esc(m.number)}</h4>${[m.team1,m.team2].filter(Boolean).map(n=>{const t=team(n);return `<div class="teamline"><div class="teamnumber">${esc(t.number)}</div><div class="teaminfo"><div class="teamname">${esc(t.name)}</div><div class="sub">${esc(t.pronunciation||'Pronunciation not entered')}${t.city?' · '+esc(t.city):''}</div>${t.bio?`<div class="sub">${esc(t.bio)}</div>`:''}</div><button class="btn small" data-profile="${esc(t.number)}">Profile</button></div>`}).join('')}</div>`).join(''):'<div class="empty">No round selected. Import a schedule or choose another event.</div>';
  document.querySelectorAll('#currentTeams [data-profile]').forEach(b=>b.addEventListener('click',()=>quickProfile(b.dataset.profile)));
- const key=selectedEvent();const defaultScript=cur?`Welcome to the robot game! ${cur.matches.map(m=>`At Table ${m.table}, please welcome ${team(m.team1).name} and ${team(m.team2).name}.`).join(' ')}`:'Welcome to the FIRST LEGO League Challenge robot game!';
+ 
+const key = selectedEvent();
+
+const defaultScript = cur
+  ? "Welcome to the robot game! " +
+    cur.matches.map(m => {
+      const names = [m.team1, m.team2]
+        .filter(Boolean)
+        .map(n => team(n).name);
+
+      return `At Table ${m.table}, please welcome ${names.join(" and ")}.`;
+    }).join(" ")
+  : "Welcome to the FIRST LEGO League Challenge robot game!";
+cur?`Welcome to the robot game! ${cur.matches.map(m=>`At Table ${m.table}, please welcome ${team(m.team1).name} and ${team(m.team2).name}.`).join(' ')}`:'Welcome to the FIRST LEGO League Challenge robot game!';
  document.getElementById('scriptText').textContent=db.scripts[key]??defaultScript;
- document.getElementById('queue').innerHTML=groups.slice(Math.max(0,idx-1),Math.min(groups.length,idx+5)).map((g,j)=>{const realIdx=Math.max(0,idx-1)+j;return `<div class="queueitem"><div><strong>${realIdx===idx?'▶ ':''}Round ${esc(g.round)} · ${esc(g.time||'Time TBD')}</strong><div class="sub">Tables ${esc(tableLabel(g))} · ${g.matches.length*2} teams</div>${scheduledGap(groups,realIdx)?'<div class="break-marker">☕ Scheduled gap before this round</div>':''}</div><button class="btn small" data-round="${realIdx}">${realIdx===idx?'Current':'Go to'}</button></div>`}).join('')||'<div class="empty">No matches for this event.</div>';
+ document.getElementById('queue').innerHTML=groups.slice(Math.max(0,idx-1),Math.min(groups.length,idx+5)).map((g,j)=>{const realIdx=Math.max(0,idx-1)+j;return `<div class="queueitem"><div><strong>${realIdx===idx?'▶ ':''}Round ${esc(g.round)} · ${esc(g.time||'Time TBD')}</strong><div class="sub">Tables ${esc(tableLabel(g))} · ${g.matches.reduce((count,m)=>count+[m.team1,m.team2].filter(Boolean).length,0)} teams</div>${scheduledGap(groups,realIdx)?'<div class="break-marker">☕ Scheduled gap before this round</div>':''}</div><button class="btn small" data-round="${realIdx}">${realIdx===idx?'Current':'Go to'}</button></div>`}).join('')||'<div class="empty">No matches for this event.</div>';
  document.querySelectorAll('#queue [data-round]').forEach(b=>b.addEventListener('click',()=>navigateRound(Number(b.dataset.round))));
  document.getElementById('gaNotes').value=db.notes[key]||'';
  document.getElementById('freshness').textContent=`${e?.name||'No event selected'} · Local data only · Live sync is not connected.`;
@@ -206,8 +219,12 @@ async function readExcelOffline(file){
    if(!tables.length){for(let col=1;col+1<row.length;col+=2)tables.push({table:String((col+1)/2),a:col,b:col+1})}
    for(const t of tables){
     const a=String(row[t.a]??'').trim().replace(/\.0+$/,''),b=String(row[t.b]??'').trim().replace(/\.0+$/,'');
-    if(!/^\d+$/.test(a)||!/^\d+$/.test(b)||a===b)continue;
-    matches.push({number:matches.length+1,sourceRound:round,table:t.table,runType,startTime:time,team1:a,team2:b});
+   const validA = /^\d+$/.test(a);
+const validB = /^\d+$/.test(b);
+
+if (!validA && !validB) continue;
+if (validA && validB && a === b) continue;
+    matches.push({number:matches.length+1,sourceRound:round,table:t.table,runType,startTime:time,team1:validA?a:'',team2:validB?b:''});
    }
   }
   return matches;
