@@ -65,7 +65,27 @@ function tableColorClass(table){const n=Number(String(table).trim());return Numb
 function team(n){return db.teams.find(t=>String(t.number)===String(n))||{number:String(n||"—"),name:"Unknown team",city:"",pronunciation:"",bio:""}}
 function activeIndex(){const gs=matchGroups();const n=db.cursor[selectedEvent()]??0;return Math.max(0,Math.min(n,Math.max(0,gs.length-1)))}
 function initEvents(){const sel=document.getElementById("eventSelect");const old=sel.value;sel.innerHTML=db.events.map(e=>`<option value="${esc(e.id)}">${esc(e.name)}</option>`).join("");if(db.events.some(e=>e.id===old))sel.value=old;else if(db.events.length)sel.value=db.events[0].id}
-function showTab(tab){document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("active",b.dataset.tab===tab));["console","scripts","teams","events","missions","data","awards","jokes"].forEach(id=>document.getElementById(id).classList.toggle("hidden",id!==tab));if(tab==="teams")renderTeams();if(tab==="events")renderMatches();if(tab==="jokes")loadJokes();if(tab==="awards"&&typeof refreshAwards==="function")refreshAwards()}
+
+function showTab(tab) {
+  document.querySelectorAll("#appNav button[data-tab]").forEach(
+    b => b.classList.toggle("active", b.dataset.tab === tab)
+  );
+
+  ["console", "scripts", "teams", "events", "missions", "data", "awards", "jokes"]
+    .forEach(id => {
+      const section = document.getElementById(id);
+      if (section) section.classList.toggle("hidden", id !== tab);
+    });
+
+  if (tab === "teams") renderTeams();
+  if (tab === "events") renderMatches();
+  if (tab === "jokes") loadJokes();
+
+  if (tab === "awards" && typeof refreshAwards === "function") {
+    refreshAwards();
+  }
+}
+
 function renderConsole(){
  const groups=matchGroups(),idx=activeIndex(),cur=groups[idx],next=groups[idx+1],e=db.events.find(x=>x.id===selectedEvent());
  const tableLabel=g=>g.matches.map(m=>m.table).join(', ');
@@ -128,8 +148,21 @@ function newTeam(){editingTeamNumber=null;document.getElementById("teamForm").re
 function parseCSV(text){const rows=[];let row=[],field="",quoted=false;for(let i=0;i<text.length;i++){const c=text[i],n=text[i+1];if(c==='"'&&quoted&&n==='"'){field+='"';i++}else if(c==='"'){quoted=!quoted}else if(c===','&&!quoted){row.push(field.trim());field=""}else if((c==='\n'||c==='\r')&&!quoted){if(c==='\r'&&n==='\n')i++;row.push(field.trim());if(row.some(x=>x!==""))rows.push(row);row=[];field=""}else field+=c}if(field.length||row.length){row.push(field.trim());if(row.some(x=>x!==""))rows.push(row)}if(!rows.length)return [];const headers=rows.shift().map(h=>h.trim().toLowerCase().replace(/[\s-]+/g,"_"));return rows.map(r=>Object.fromEntries(headers.map((h,i)=>[h,r[i]??""])))}
 function download(name,content,type="text/plain"){const blob=new Blob([content],{type});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
 function backup(){const ceremonyEvents={};for(let i=0;i<cloudStorage.length;i++){const k=cloudStorage.key(i);if(k.startsWith('coFllCeremonyEvent:'))ceremonyEvents[k]=cloudStorage.getItem(k)}return {version:2,exportedAt:new Date().toISOString(),...db,ceremonyEvents}}
-document.querySelectorAll("nav button").forEach(b=>b.addEventListener("click",()=>{if(b.dataset.tab==='scripts'&&typeof ceremonyRefreshEvents==='function'){ceremonyRefreshEvents(selectedEvent());ceremonyPopulate()}showTab(b.dataset.tab)}));
-document.getElementById("loadBoulderTest").addEventListener("click",loadBoulderTestData);
+
+document.querySelectorAll("#appNav button[data-tab]").forEach(button => {
+  button.addEventListener("click", () => {
+    const tab = button.dataset.tab;
+
+    if (tab === "scripts" &&
+        typeof ceremonyRefreshEvents === "function") {
+      ceremonyRefreshEvents(selectedEvent());
+      ceremonyPopulate();
+    }
+
+    showTab(tab);
+  });
+});
+
 document.getElementById("eventSelect").addEventListener("change",()=>{renderConsole();renderMatches()});
 document.getElementById("refreshBtn").addEventListener("click",renderConsole);
 document.getElementById('continueAfterBreak').addEventListener('click',()=>{const i=pendingBreakIndex;closeBreak();if(i!==null)jumpMatch(i)});
@@ -257,30 +290,7 @@ function gaParseEmcee(rows, runType) {
 
   return matches;
 }
-{const matches=[];
-  for(let i=0;i<rows.length;i++){
-   const row=rows[i]||[],raw=String(row[0]??'').trim();
-   if(!/^\d+(?:\.0+)?$/.test(raw))continue;
-   const round=Number(raw),next=rows[i+1]||[],time=gaTime(next[0]);
-   // Identify every table from the header row immediately above this round.
-   const header=rows[i-1]||[],tables=[];
-   for(let col=1;col<Math.max(row.length,header.length);col++){
-    const h=String(header[col]??'').trim(),match=h.match(/^(\d+)A$/i);
-    if(match){const other=String(header[col+1]??'').trim();if(other.toUpperCase()===match[1]+'B')tables.push({table:match[1],a:col,b:col+1});}
-   }
-   if(!tables.length){for(let col=1;col+1<row.length;col+=2)tables.push({table:String((col+1)/2),a:col,b:col+1})}
-   for(const t of tables){
-    const a=String(row[t.a]??'').trim().replace(/\.0+$/,''),b=String(row[t.b]??'').trim().replace(/\.0+$/,'');
-   const validA = /^\d+$/.test(a);
-const validB = /^\d+$/.test(b);
 
-if (!validA && !validB) continue;
-if (validA && validB && a === b) continue;
-    matches.push({number:matches.length+1,sourceRound:round,table:t.table,runType,startTime:time,team1:validA?a:'',team2:validB?b:''});
-   }
-  }
-  return matches;
- }
  function gaParseWorkbook(sheets){
   const teamSheet=sheets['Team Info'];
   if(sheets['emcee(am)']||sheets['emcee(pm)']){
