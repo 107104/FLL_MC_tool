@@ -274,5 +274,55 @@ table{border-collapse:collapse;width:100%;font-size:14px}th,td{text-align:left;p
 
 <script src="/awards.js"></script>
 <script src="/cloud.js"></script>
+  
+<script>
+(function () {
+  const tabs = [
+    "console", "scripts", "teams", "events",
+    "missions", "data", "awards", "jokes"
+  ];
+
+  document.getElementById("appNav").addEventListener("click", function (event) {
+    const button = event.target.closest("button[data-tab]");
+    if (!button) return;
+
+    const tab = button.dataset.tab;
+    if (!tabs.includes(tab)) return;
+
+    // Show the selected section.
+    tabs.forEach(id => {
+      const section = document.getElementById(id);
+      if (section) {
+        section.classList.toggle("hidden", id !== tab);
+      }
+    });
+
+    // Update the selected tab.
+    document.querySelectorAll("#appNav button[data-tab]").forEach(btn => {
+      btn.classList.toggle("active", btn.dataset.tab === tab);
+    });
+
+    // Refresh tab content when possible.
+    if (tab === "teams" && typeof renderTeams === "function") {
+      renderTeams();
+    }
+    if (tab === "events" && typeof renderMatches === "function") {
+      renderMatches();
+    }
+    if (tab === "jokes" && typeof loadJokes === "function") {
+      loadJokes();
+    }
+    if (tab === "awards" && typeof refreshAwards === "function") {
+      refreshAwards();
+    }
+    if (tab === "scripts" &&
+        typeof ceremonyRefreshEvents === "function") {
+      ceremonyRefreshEvents(selectedEvent());
+      ceremonyPopulate();
+    }
+  });
+})();
+</script>
+
 </body>
 </html>
